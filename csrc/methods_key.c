@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2011, Regents of the University of California
  * All rights reserved.
- * Written by: Jeff Burke <jburke@ucla.edu>
- *             Derek Kulinski <takeda@takeda.tk>
+ * Written by: Derek Kulinski <takeda@takeda.tk>
+ *             Jeff Burke <jburke@ucla.edu>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,6 +32,7 @@
 #include <ccn/ccn.h>
 #include <ccn/signing.h>
 #include <openssl/evp.h>
+#include <openssl/err.h>
 
 #include "pyccn.h"
 #include "key_utils.h"
@@ -122,12 +123,12 @@ KeyLocator_key_to_ccn(struct ccn_charbuf *keylocator, PyObject *py_key)
 	struct ccn_pkey *key;
 	int r;
 
-	if (!CCNObject_IsValid(PKEY, py_key)) {
+	if (!CCNObject_IsValid(PKEY_PUB, py_key)) {
 		PyErr_SetString(PyExc_TypeError, "Argument needs to be of type CCN Key");
 		return -1;
 	}
 
-	key = CCNObject_Get(PKEY, py_key);
+	key = CCNObject_Get(PKEY_PUB, py_key);
 
 	r = ccn_charbuf_append_tt(keylocator, CCN_DTAG_Key, CCN_DTAG);
 	JUMP_IF_NEG_MEM(r, error);
@@ -153,7 +154,7 @@ Key_to_ccn_private(PyObject *py_key)
 
 	capsule = PyObject_GetAttrString(py_key, "ccn_data_private");
 	assert(capsule);
-	key = CCNObject_Get(PKEY, capsule);
+	key = CCNObject_Get(PKEY_PRIV, capsule);
 	Py_DECREF(capsule);
 
 	return key;
@@ -169,9 +170,9 @@ Key_from_ccn(struct ccn_pkey *key_ccn)
 {
 	PyObject *py_obj_Key;
 	RSA *private_key_rsa;
-	struct ccn_pkey *private_key_ccn, *public_key_ccn;
-	unsigned char* public_key_digest;
-	size_t public_key_digest_len;
+	PyObject *py_private_key_ccn = NULL, *py_public_key_ccn = NULL,
+			*py_public_key_digest = NULL;
+	int public_key_digest_len;
 	int r;
 	PyObject* py_o;
 
@@ -192,15 +193,20 @@ Key_from_ccn(struct ccn_pkey *key_ccn)
 	// These non-ccn functions assume the CCN defaults, RSA + SHA256
 	private_key_rsa = EVP_PKEY_get1_RSA((EVP_PKEY *) key_ccn);
 	if (!private_key_rsa) {
-		PyErr_SetString(g_type_Key, "Error obtaining private key");
+		unsigned int err;
+
+		err = ERR_get_error();
+		PyErr_Format(g_PyExc_CCNKeyError, "Error obtaining private key: %s",
+				ERR_reason_error_string(err));
 		goto error;
 	}
 
-	r = ccn_keypair_from_rsa(private_key_rsa, &private_key_ccn,
-			&public_key_ccn);
+#pragma message "TODO: handle situation when we only have public key"
+	r = ccn_keypair_from_rsa(0, private_key_rsa, &py_private_key_ccn,
+			&py_public_key_ccn);
 	JUMP_IF_NEG(r, error);
 
-	r = create_public_key_digest(private_key_rsa, &public_key_digest,
+	r = create_public_key_digest(private_key_rsa, &py_public_key_digest,
 			&public_key_digest_len);
 	JUMP_IF_NEG(r, error);
 
@@ -215,11 +221,8 @@ Key_from_ccn(struct ccn_pkey *key_ccn)
 	JUMP_IF_NEG(r, error);
 
 	/* publicKeyID */
-	py_o = PyByteArray_FromStringAndSize((char*) public_key_digest,
-			public_key_digest_len);
-	JUMP_IF_NULL(py_o, error);
-	r = PyObject_SetAttrString(py_obj_Key, "publicKeyID", py_o);
-	Py_DECREF(py_o);
+	r = PyObject_SetAttrString(py_obj_Key, "publicKeyID", py_public_key_digest);
+	Py_CLEAR(py_public_key_digest);
 	JUMP_IF_NEG(r, error);
 
 	//free (public_key_digest); -- this is the job of python
@@ -241,30 +244,27 @@ Key_from_ccn(struct ccn_pkey *key_ccn)
 	// 3) Set ccn_data to a cobject pointing to the c struct
 	//    and ensure proper destructor is set up for the c object.
 	// privateKey
-	// Don't free these here, python will call destructor
-	py_o = CCNObject_New(PKEY, private_key_ccn);
-	JUMP_IF_NULL(py_o, error);
-	r = PyObject_SetAttrString(py_obj_Key, "ccn_data_private", py_o);
-	Py_DECREF(py_o);
+	r = PyObject_SetAttrString(py_obj_Key, "ccn_data_private",
+			py_private_key_ccn);
+	Py_CLEAR(py_private_key_ccn);
 	JUMP_IF_NEG(r, error);
 
 	// publicKey
-	// Don't free this here, python will call destructor
-	py_o = CCNObject_New(PKEY, public_key_ccn);
-	JUMP_IF_NULL(py_o, error);
-	r = PyObject_SetAttrString(py_obj_Key, "ccn_data_public", py_o);
-	Py_DECREF(py_o);
+	r = PyObject_SetAttrString(py_obj_Key, "ccn_data_public",
+			py_public_key_ccn);
+	Py_CLEAR(py_public_key_ccn);
 	JUMP_IF_NEG(r, error);
 
 	// 4) Return the created object
-
-	//free(public_key_digest);
 
 	debug("Key_from_ccn ends\n");
 
 	return py_obj_Key;
 
 error:
+	Py_XDECREF(py_private_key_ccn);
+	Py_XDECREF(py_public_key_ccn);
+	Py_XDECREF(py_public_key_digest);
 	Py_XDECREF(py_obj_Key);
 	return NULL;
 }
@@ -406,13 +406,14 @@ _pyccn_Key_to_ccn_private(PyObject *UNUSED(self), PyObject *py_key)
 PyObject *
 _pyccn_Key_from_ccn(PyObject *UNUSED(self), PyObject *cobj_key)
 {
-	if (!CCNObject_IsValid(PKEY, cobj_key)) {
-		PyErr_SetString(PyExc_TypeError, "Must pass a CCN PKEY object");
+	if (CCNObject_IsValid(PKEY_PRIV, cobj_key))
+		return Key_from_ccn(CCNObject_Get(PKEY_PRIV, cobj_key));
 
-		return NULL;
-	}
+	if (!CCNObject_IsValid(PKEY_PUB, cobj_key))
+		return Key_from_ccn(CCNObject_Get(PKEY_PUB, cobj_key));
 
-	return Key_from_ccn(CCNObject_Get(PKEY, cobj_key));
+	PyErr_SetString(PyExc_TypeError, "Must pass a CCN PKEY object");
+	return NULL;
 }
 
 PyObject *
@@ -472,4 +473,83 @@ _pyccn_KeyLocator_from_ccn(PyObject *UNUSED(self), PyObject *py_keylocator)
 	}
 
 	return KeyLocator_from_ccn(py_keylocator);
+}
+
+PyObject *
+_pyccn_PEM_read_key(PyObject *UNUSED(self), PyObject *args)
+{
+	PyObject *py_file;
+	PyObject *py_private_key, *py_public_key, *py_digest, *py_ret;
+	int digest_len, r;
+	FILE *fin;
+
+	// Would use METH_O but I think this method will support more args in the
+	// future
+	if (!PyArg_ParseTuple(args, "O", &py_file))
+		return NULL;
+
+	fin = _pyccn_open_file_handle(py_file, "r");
+	if (!fin)
+		return NULL;
+
+	r = read_key_pem(fin, &py_private_key, &py_public_key, &py_digest,
+			&digest_len);
+	_pyccn_close_file_handle(fin);
+	if (r < 0)
+		return NULL;
+
+	py_ret = Py_BuildValue("(OOOi)", py_private_key, py_public_key, py_digest,
+			digest_len);
+	Py_DECREF(py_private_key);
+	Py_DECREF(py_public_key);
+	Py_DECREF(py_digest);
+
+	return py_ret;
+}
+
+PyObject *
+_pyccn_PEM_write_key(PyObject *UNUSED(self), PyObject *args,
+		PyObject *py_kwds)
+{
+	PyObject *py_pkey, *py_file = Py_None;
+	struct ccn_pkey *pkey;
+	FILE *of;
+	int r;
+	int private = -1;
+
+	static char *kwlist[] = {"key", "file", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, py_kwds, "O|O", kwlist, &py_pkey,
+			&py_file))
+		return NULL;
+
+	if (CCNObject_IsValid(PKEY_PRIV, py_pkey)) {
+		private = 1;
+		pkey = CCNObject_Get(PKEY_PRIV, py_pkey);
+	} else if (CCNObject_IsValid(PKEY_PUB, py_pkey)) {
+		private = 0;
+		pkey = CCNObject_Get(PKEY_PUB, py_pkey);
+	} else {
+		PyErr_SetString(PyExc_TypeError, "Argument needs to be a CCN PKEY");
+		return NULL;
+	}
+
+	assert(private >= 0 && private <= 1);
+
+	if (py_file != Py_None) {
+		of = _pyccn_open_file_handle(py_file, "w");
+		if (!of)
+			return NULL;
+
+		if (private)
+			r = write_key_pem(of, pkey);
+		else
+			r = write_key_pem_public(of, pkey);
+
+		_pyccn_close_file_handle(of);
+		if (r < 0)
+			return NULL;
+	}
+
+	Py_RETURN_NONE;
 }
