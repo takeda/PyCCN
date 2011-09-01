@@ -41,17 +41,22 @@ from . import _pyccn
 from . import Name
 
 class Interest(object):
-	def __init__(self):
-		self.name = None  # Start from None to use for templates?
-		self.minSuffixComponents = None  # default 0
-		self.maxSuffixComponents = None  # default infinity
-		self.publisherPublicKeyDigest = None   # SHA256 hash
-		self.exclude = None
-		self.childSelector = None
-		self.answerOriginKind = None
-		self.scope  = None
-		self.interestLifetime = None
-		self.nonce = None
+	def __init__(self, name=None, minSuffixComponents=None, \
+				 maxSuffixComponents=None, publisherPublicKeyDigest=None, \
+				 exclude=None, childSelector=None, answerOriginKind=None, \
+				 scope=None, interestLifetime=None, nonce=None):
+
+		self.name = name  # Start from None to use for templates?
+		self.minSuffixComponents = minSuffixComponents  # default 0
+		self.maxSuffixComponents = maxSuffixComponents  # default infinity
+		self.publisherPublicKeyDigest = publisherPublicKeyDigest  # SHA256 hash
+		self.exclude = exclude
+		self.childSelector = childSelector
+		self.answerOriginKind = answerOriginKind
+		self.scope  = scope
+		self.interestLifetime = interestLifetime
+		self.nonce = nonce
+
 		# pyccn
 		self.ccn = None # Reference to CCN object
 		self.ccn_data_dirty = True
@@ -69,6 +74,20 @@ class Interest(object):
 				self.ccn_data, self.ccn_data_parsed = _pyccn._pyccn_Interest_to_ccn(self)
 				self.ccn_data_dirty = False
 		return object.__getattribute__(self, name)
+
+	def matches_name(self, name):
+		i_name = self.name.components
+		o_name = name.components
+
+		# requested name is longer than ours
+		if len(i_name) > len(o_name):
+			return False
+
+		# at least one of given components don't match
+		if not all(i == j for i, j in zip(i_name, o_name)):
+			return False
+
+		return True
 
 # Bloom filters will be deprecated, so we do not support them.
 class ExclusionFilter(object):
