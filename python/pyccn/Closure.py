@@ -28,6 +28,14 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+UPCALL_FINAL = 0
+UPCALL_INTEREST = 1
+UPCALL_CONSUMED_INTEREST = 2
+UPCALL_CONTENT = 3
+UPCALL_INTEREST_TIMED_OUT = 4
+UPCALL_CONTENT_UNVERIFIED = 5
+UPCALL_CONTENT_BAD = 6
+
 # Fronts ccn_closure.
 
 class Closure(object):
@@ -41,9 +49,12 @@ class Closure(object):
 		self.ccn_data_dirty = False
 		pass
 
+	#If you're getting strange errors in upcall()
+	#check your code whether you're returning a value
 	def upcall(self, kind, upcallInfo):
 		# override to be call
 		print('upcall', self, kind, upcallInfo)
+		return 0
 
 class UpcallInfo(object):
 	def __init__(self):
