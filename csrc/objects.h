@@ -19,20 +19,26 @@ struct completed_closure {
 enum _pyccn_capsules {
 	CLOSURE = 1,
 	CONTENT_OBJECT,
-	CONTENT_OBJECT_COMPONENTS,
 	EXCLUSION_FILTER,
 	HANDLE,
 	INTEREST,
 	KEY_LOCATOR,
 	NAME,
-	PARSED_CONTENT_OBJECT,
-	PARSED_INTEREST,
 	PKEY_PRIV,
 	PKEY_PUB,
 	SIGNATURE,
 	SIGNED_INFO,
 	SIGNING_PARAMS,
 	UPCALL_INFO
+};
+
+struct content_object_data {
+	struct ccn_parsed_ContentObject *pco;
+	struct ccn_indexbuf *comps;
+};
+
+struct interest_data {
+	struct ccn_parsed_interest *pi;
 };
 
 PyObject *CCNObject_New(enum _pyccn_capsules type, void *pointer);
@@ -42,10 +48,6 @@ int CCNObject_IsValid(enum _pyccn_capsules type, PyObject *capsule);
 void *CCNObject_Get(enum _pyccn_capsules type, PyObject *capsule);
 
 PyObject *CCNObject_New_Closure(struct ccn_closure **closure);
-PyObject *CCNObject_New_ParsedContentObject(
-		struct ccn_parsed_ContentObject **pco);
-PyObject *CCNObject_New_ContentObjectComponents(
-		struct ccn_indexbuf **comps);
 PyObject *CCNObject_New_charbuf(enum _pyccn_capsules type,
 		struct ccn_charbuf **p);
 void CCNObject_Complete_Closure(PyObject *py_closure);
