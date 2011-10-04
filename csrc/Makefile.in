@@ -79,10 +79,10 @@ LTLIBRARIES = $(pyccn_LTLIBRARIES)
 _pyccn_la_LIBADD =
 am__pyccn_la_OBJECTS = _pyccn_la-pyccn.lo _pyccn_la-key_utils.lo \
 	_pyccn_la-methods.lo _pyccn_la-methods_contentobject.lo \
-	_pyccn_la-methods_interest.lo _pyccn_la-methods_key.lo \
-	_pyccn_la-methods_name.lo _pyccn_la-methods_signature.lo \
-	_pyccn_la-methods_signedinfo.lo _pyccn_la-objects.lo \
-	_pyccn_la-util.lo
+	_pyccn_la-methods_handle.lo _pyccn_la-methods_interest.lo \
+	_pyccn_la-methods_key.lo _pyccn_la-methods_name.lo \
+	_pyccn_la-methods_signature.lo _pyccn_la-methods_signedinfo.lo \
+	_pyccn_la-objects.lo _pyccn_la-util.lo
 _pyccn_la_OBJECTS = $(am__pyccn_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -256,6 +256,7 @@ noinst_HEADERS = \
 	key_utils.h \
 	methods.h \
 	methods_contentobject.h \
+	methods_handle.h \
 	methods_interest.h \
 	methods_key.h \
 	methods_name.h \
@@ -270,6 +271,7 @@ _pyccn_la_SOURCES = \
 	key_utils.c \
 	methods.c \
 	methods_contentobject.c \
+	methods_handle.c \
 	methods_interest.c \
 	methods_key.c \
 	methods_name.c \
@@ -368,6 +370,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_pyccn_la-key_utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_pyccn_la-methods.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_pyccn_la-methods_contentobject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_pyccn_la-methods_handle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_pyccn_la-methods_interest.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_pyccn_la-methods_key.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_pyccn_la-methods_name.Plo@am__quote@
@@ -432,6 +435,14 @@ _pyccn_la-methods_contentobject.lo: methods_contentobject.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='methods_contentobject.c' object='_pyccn_la-methods_contentobject.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(_pyccn_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o _pyccn_la-methods_contentobject.lo `test -f 'methods_contentobject.c' || echo '$(srcdir)/'`methods_contentobject.c
+
+_pyccn_la-methods_handle.lo: methods_handle.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(_pyccn_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT _pyccn_la-methods_handle.lo -MD -MP -MF $(DEPDIR)/_pyccn_la-methods_handle.Tpo -c -o _pyccn_la-methods_handle.lo `test -f 'methods_handle.c' || echo '$(srcdir)/'`methods_handle.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/_pyccn_la-methods_handle.Tpo $(DEPDIR)/_pyccn_la-methods_handle.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='methods_handle.c' object='_pyccn_la-methods_handle.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(_pyccn_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o _pyccn_la-methods_handle.lo `test -f 'methods_handle.c' || echo '$(srcdir)/'`methods_handle.c
 
 _pyccn_la-methods_interest.lo: methods_interest.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(_pyccn_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT _pyccn_la-methods_interest.lo -MD -MP -MF $(DEPDIR)/_pyccn_la-methods_interest.Tpo -c -o _pyccn_la-methods_interest.lo `test -f 'methods_interest.c' || echo '$(srcdir)/'`methods_interest.c
