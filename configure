@@ -11195,7 +11195,7 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 
-	ccndirs="$HOME/ccnx /usr/local"
+	ccndirs="/usr/local /usr $HOME/ccnx"
 
 # Check whether --with-ccn was given.
 if test "${with_ccn+set}" = set; then :
