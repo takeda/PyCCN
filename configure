@@ -11488,26 +11488,19 @@ $as_echo "$PYTHON_LDFLAGS" >&6; }
 
 
 	#
-	# Check for installation prefix
-	#
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for given installation prefix" >&5
-$as_echo_n "checking for given installation prefix... " >&6; }
-	if test "${prefix}" = "NONE"; then
-		ac_python_prefix=${ac_default_prefix}
-	else
-		ac_python_prefix=${prefix}
-	fi
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${ac_python_prefix}" >&5
-$as_echo "${ac_python_prefix}" >&6; }
-
-	#
 	# Check for site packages
 	#
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Python site-packages path" >&5
 $as_echo_n "checking for Python site-packages path... " >&6; }
 	if test -z "$PYTHON_SITE_PKG"; then
-		PYTHON_SITE_PKG=`$PYTHON -c "import distutils.sysconfig; \
-			print (distutils.sysconfig.get_python_lib(True, False, '${ac_python_prefix}'));"`
+		if test "${prefix}" = "NONE"; then
+			PYTHON_SITE_PKG=`$PYTHON -c "import sys; import distutils.sysconfig; \
+				path = distutils.sysconfig.get_python_lib(False, False, '${ac_default_prefix}'); \
+				print(path in sys.path and path or distutils.sysconfig.get_python_lib())"`
+		else
+			PYTHON_SITE_PKG=`$PYTHON -c "import distutils.sysconfig; \
+				print (distutils.sysconfig.get_python_lib(False, False, '${prefix}'))"`
+		fi
 	fi
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_SITE_PKG" >&5
 $as_echo "$PYTHON_SITE_PKG" >&6; }
