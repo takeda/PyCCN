@@ -293,7 +293,6 @@ TESTS = \
 check_SCRIPTS = run
 TEST_EXTENSIONS = .py
 PY_LOG_COMPILER = ./run
-AM_PY_LOG_FLAGS = -v
 all: all-am
 
 .SUFFIXES:
@@ -646,6 +645,7 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	recheck recheck-html uninstall uninstall-am
 
+#AM_PY_LOG_FLAGS = -v
 
 #%.gdb: %
 #	gdb $(TESTS_ENVIRONMENT) $*
