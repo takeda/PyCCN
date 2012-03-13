@@ -7,7 +7,8 @@
 
 from . import _pyccn
 import select, time
-import threading, dummy_threading
+import threading
+#import dummy_threading as threading
 
 # Fronts ccn
 
@@ -19,39 +20,31 @@ class CCN(object):
 		self.ccn_data = _pyccn.create()
 		_pyccn.connect(self.ccn_data)
 
-	def _acquire_lock(self):
-		if not _pyccn.is_upcall_executing(self.ccn_data):
-			#print("acquiring lock")
+	def _acquire_lock(self, tag):
+		if not _pyccn.is_run_executing(self.ccn_data):
+#			print("%s: acquiring lock" % tag)
 			self._handle_lock.acquire()
-			#print("lock acquired")
+#			print("%s: lock acquired" % tag)
 
-	def _release_lock(self):
-		if not _pyccn.is_upcall_executing(self.ccn_data):
-			#print("releasing lock")
+	def _release_lock(self, tag):
+		if not _pyccn.is_run_executing(self.ccn_data):
+#			print("%s: releasing lock" % tag)
 			self._handle_lock.release()
-			#print("lock released")
+#			print("%s: lock released" % tag)
 
 	def fileno(self):
 		return _pyccn.get_connection_fd(self.ccn_data)
 
 	def process_scheduled(self):
-		assert(_pyccn.is_upcall_executing(None) == -1)
-		self._handle_lock.acquire()
-		try:
-			return _pyccn.process_scheduled_operations(self.ccn_data)
-		finally:
-			self._handle_lock.release()
+		assert not _pyccn.is_run_executing(self.ccn_data), "Command should be called when ccn_run is not running"
+		return _pyccn.process_scheduled_operations(self.ccn_data)
 
 	def output_is_pending(self):
-		assert(_pyccn.is_upcall_executing(None) == -1)
-		self._handle_lock.acquire()
-		try:
-			return _pyccn.output_is_pending(self.ccn_data)
-		finally:
-			self._handle_lock.release()
+		assert not _pyccn.is_run_executing(self.ccn_data), "Command should be called when ccn_run is not running"
+		return _pyccn.output_is_pending(self.ccn_data)
 
 	def run(self, timeoutms):
-		assert(_pyccn.is_upcall_executing(None) == -1)
+		assert not _pyccn.is_run_executing(self.ccn_data), "Command should be called when ccn_run is not running"
 		self._handle_lock.acquire()
 		try:
 			_pyccn.run(self.ccn_data, timeoutms)
@@ -59,47 +52,47 @@ class CCN(object):
 			self._handle_lock.release()
 
 	def setRunTimeout(self, timeoutms):
-		#self._acquire_lock()
-		#try:
-			_pyccn.set_run_timeout(self.ccn_data, timeoutms)
-		#finally:
-			#self._release_lock
+		_pyccn.set_run_timeout(self.ccn_data, timeoutms)
 
 	# Application-focused methods
 	#
-	def expressInterest(self, name, closure, template=None):
-		self._acquire_lock()
+	def expressInterest(self, name, closure, template = None):
+		self._acquire_lock("expressInterest")
 		try:
 			return _pyccn.express_interest(self, name, closure, template)
 		finally:
-			self._release_lock()
+			self._release_lock("expressInterest")
 
 	def setInterestFilter(self, name, closure, flags = None):
-		self._acquire_lock()
+		self._acquire_lock("setInterestFilter")
 		try:
 			if flags is None:
 				return _pyccn.set_interest_filter(self.ccn_data, name.ccn_data, closure)
 			else:
 				return _pyccn.set_interest_filter(self.ccn_data, name.ccn_data, closure, flags)
 		finally:
-			self._release_lock()
+			self._release_lock("setInterestFilter")
 
 	# Blocking!
 	def get(self, name, template = None, timeoutms = 3000):
-		self._acquire_lock()
+#		if not _pyccn.is_upcall_executing(self.ccn_data):
+#			raise Exception, "Get called outside of upcall"
+
+		self._acquire_lock("get")
 		try:
 			return _pyccn.get(self, name, template, timeoutms)
 		finally:
-			self._release_lock()
+			self._release_lock("get")
 
 	def put(self, contentObject):
-		self._acquire_lock()
+		self._acquire_lock("put")
 		try:
 			return _pyccn.put(self, contentObject)
 		finally:
-			self._release_lock()
+			self._release_lock("put")
 
-	def getDefaultKey(self):
+	@staticmethod
+	def getDefaultKey():
 		return _pyccn.get_default_key()
 
 class EventLoop(object):

@@ -115,3 +115,61 @@ _pyccn_close_file_handle(FILE *fh)
 {
 	return fclose(fh);
 }
+
+void *
+_pyccn_run_state_add(struct ccn *handle, PyThreadState *thread_state)
+{
+	struct pyccn_state *pyccn_state = GETSTATE(_pyccn_module);
+	struct pyccn_run_state *state;
+
+	state = malloc(sizeof(struct pyccn_run_state));
+	if (!state)
+		return PyErr_NoMemory();
+
+	state->handle = handle;
+	state->thread_state = thread_state;
+	state->next = pyccn_state->run_state;
+
+	pyccn_state->run_state = state;
+
+	return handle;
+}
+
+struct pyccn_run_state *
+_pyccn_run_state_find(struct ccn *handle)
+{
+	struct pyccn_state *pyccn_state = GETSTATE(_pyccn_module);
+	struct pyccn_run_state *p;
+
+	for (p = pyccn_state->run_state; p; p = p->next) {
+		if (p->handle != handle)
+			continue;
+
+		return p;
+	}
+
+	return NULL;
+}
+
+void
+_pyccn_run_state_clear(void *handle)
+{
+	struct pyccn_state *pyccn_state = GETSTATE(_pyccn_module);
+	struct pyccn_run_state *p, *q;
+
+	p = pyccn_state->run_state;
+	if (p->handle == handle) {
+		pyccn_state->run_state = p->next;
+		free(p);
+		return;
+	}
+
+	for (q = p, p = p->next; p; q = p, p = p->next) {
+		if (p->handle != handle)
+			continue;
+
+		q->next = p->next;
+		free(p);
+		return;
+	}
+}

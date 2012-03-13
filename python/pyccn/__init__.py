@@ -10,7 +10,18 @@ __all__ = ['CCN', 'Closure', 'ContentObject', 'Interest', 'Key', 'Name']
 import sys as _sys
 
 try:
-	from . import _pyccn
+	from pyccn.CCN import *
+	from pyccn.Closure import *
+	from pyccn.ContentObject import *
+	from pyccn.Interest import *
+	from pyccn.Key import *
+	from pyccn.Name import *
 except ImportError:
 	del _sys.modules[__name__]
 	raise
+
+#def name_compatibility():
+#	global _name_immutable
+#
+#	_name_immutable = 1
+
