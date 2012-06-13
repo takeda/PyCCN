@@ -10508,10 +10508,10 @@ fi
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for include/ccn/ccn.h in $ccndir" >&5
 $as_echo_n "checking for include/ccn/ccn.h in $ccndir... " >&6; }
 		if test -f "$ccndir/include/ccn/ccn.h"; then
-			CCN_INCLUDES="-I$ccndir/include"
-			CCN_LDFLAGS="-L$ccndir/lib"
-			CCN_LIBS="-lccn"
-			CCN_BIN="$ccndir/bin"
+			: ${CCN_INCLUDES:="-I$ccndir/include"}
+			: ${CCN_LDFLAGS:="-L$ccndir/lib"}
+			: ${CCN_LIBS:="-lccn"}
+			: ${CCN_BIN:="$ccndir/bin"}
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 			break
