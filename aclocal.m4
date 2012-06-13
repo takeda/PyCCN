@@ -976,9 +976,8 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
-m4_include([m4/ax_check_openssl.m4])
+m4_include([m4/ax_ccnx.m4])
 m4_include([m4/ax_python_devel.m4])
-m4_include([m4/custom.m4])
 m4_include([build-aux/libtool.m4])
 m4_include([build-aux/ltoptions.m4])
 m4_include([build-aux/ltsugar.m4])
