@@ -34,8 +34,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = python
-DIST_COMMON = $(pyccn_PYTHON) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+DIST_COMMON = $(pyccn_PYTHON) $(pyccnimpl_PYTHON) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_ccnx.m4 \
 	$(top_srcdir)/m4/ax_python_devel.m4 \
@@ -80,7 +80,7 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(pyccndir)"
+am__installdirs = "$(DESTDIR)$(pyccndir)" "$(DESTDIR)$(pyccnimpldir)"
 py_compile = $(top_srcdir)/build-aux/py-compile
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -212,6 +212,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pyccndir = $(PYTHON_SITE_PKG)/pyccn
+pyccnimpldir = $(pyccndir)/impl
 #pyccnstagingdir = $(pyccndir)/staging
 pyccn_PYTHON = \
 	pyccn/__init__.py \
@@ -223,6 +224,12 @@ pyccn_PYTHON = \
 	pyccn/Name.py \
 	pyccn/Repository.py \
 	pyccn/utils.py
+
+pyccnimpl_PYTHON = \
+	pyccn/impl/__init__.py \
+	pyccn/impl/ccnb.py \
+	pyccn/impl/enumeration.py \
+	pyccn/impl/segmenting.py
 
 all: all-am
 
@@ -301,6 +308,44 @@ uninstall-pyccnPYTHON:
 	cd "$(DESTDIR)$(pyccndir)" && rm -f $$filesc || exit $$?; \
 	echo " ( cd '$(DESTDIR)$(pyccndir)' && rm -f" $$fileso ")"; \
 	cd "$(DESTDIR)$(pyccndir)" && rm -f $$fileso
+install-pyccnimplPYTHON: $(pyccnimpl_PYTHON)
+	@$(NORMAL_INSTALL)
+	test -z "$(pyccnimpldir)" || $(MKDIR_P) "$(DESTDIR)$(pyccnimpldir)"
+	@list='$(pyccnimpl_PYTHON)'; dlist=; list2=; test -n "$(pyccnimpldir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then b=; else b="$(srcdir)/"; fi; \
+	  if test -f $$b$$p; then \
+	    $(am__strip_dir) \
+	    dlist="$$dlist $$f"; \
+	    list2="$$list2 $$b$$p"; \
+	  else :; fi; \
+	done; \
+	for file in $$list2; do echo $$file; done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pyccnimpldir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pyccnimpldir)" || exit $$?; \
+	done || exit $$?; \
+	if test -n "$$dlist"; then \
+	  if test -z "$(DESTDIR)"; then \
+	    PYTHON=$(PYTHON) $(py_compile) --basedir "$(pyccnimpldir)" $$dlist; \
+	  else \
+	    PYTHON=$(PYTHON) $(py_compile) --destdir "$(DESTDIR)" --basedir "$(pyccnimpldir)" $$dlist; \
+	  fi; \
+	else :; fi
+
+uninstall-pyccnimplPYTHON:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pyccnimpl_PYTHON)'; test -n "$(pyccnimpldir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	filesc=`echo "$$files" | sed 's|$$|c|'`; \
+	fileso=`echo "$$files" | sed 's|$$|o|'`; \
+	echo " ( cd '$(DESTDIR)$(pyccnimpldir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(pyccnimpldir)" && rm -f $$files || exit $$?; \
+	echo " ( cd '$(DESTDIR)$(pyccnimpldir)' && rm -f" $$filesc ")"; \
+	cd "$(DESTDIR)$(pyccnimpldir)" && rm -f $$filesc || exit $$?; \
+	echo " ( cd '$(DESTDIR)$(pyccnimpldir)' && rm -f" $$fileso ")"; \
+	cd "$(DESTDIR)$(pyccnimpldir)" && rm -f $$fileso
 tags: TAGS
 TAGS:
 
@@ -342,7 +387,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile
 installdirs:
-	for dir in "$(DESTDIR)$(pyccndir)"; do \
+	for dir in "$(DESTDIR)$(pyccndir)" "$(DESTDIR)$(pyccnimpldir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -390,7 +435,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-pyccnPYTHON
+install-data-am: install-pyccnPYTHON install-pyccnimplPYTHON
 
 install-dvi: install-dvi-am
 
@@ -434,7 +479,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-pyccnPYTHON
+uninstall-am: uninstall-pyccnPYTHON uninstall-pyccnimplPYTHON
 
 .MAKE: install-am install-strip
 
@@ -445,10 +490,11 @@ uninstall-am: uninstall-pyccnPYTHON
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-pyccnPYTHON \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	uninstall uninstall-am uninstall-pyccnPYTHON
+	install-pyccnimplPYTHON install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
+	uninstall-pyccnPYTHON uninstall-pyccnimplPYTHON
 
 
 #pyccnstaging_PYTHON = \
