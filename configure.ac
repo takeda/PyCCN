@@ -10,6 +10,7 @@ AC_CONFIG_SRCDIR([csrc/pyccn.c])
 
 AM_INIT_AUTOMAKE([foreign 1.11 silent-rules parallel-tests color-tests -Wall -Werror])
 AM_SILENT_RULES([yes])
+AM_MAINTAINER_MODE([disable])
 
 # Checks for programs.
 AC_PROG_CC
